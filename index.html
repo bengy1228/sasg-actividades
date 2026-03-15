@@ -542,33 +542,8 @@
 </head>
 <body>
 
-<!-- SETUP MODAL -->
-<div class="modal-overlay" id="setupModal">
-  <div class="modal">
-    <div class="modal-logo">
-      <span class="modal-badge">SASG</span>
-      <span style="font-size:12px;color:var(--text-muted);font-weight:300;letter-spacing:0.06em;text-transform:uppercase;">Configuración inicial</span>
-    </div>
-    <div class="modal-title">Conectar Google Sheets</div>
-    <p class="modal-sub">Para guardar los cambios en tiempo real necesitas conectar tu hoja de cálculo. Sigue estos pasos una sola vez:</p>
-    <ol class="step-list">
-      <li data-n="1">Importa el archivo CSV en Google Sheets</li>
-      <li data-n="2">Ve a <strong>Extensiones → Apps Script</strong></li>
-      <li data-n="3">Pega el código del archivo <code>apps-script.gs</code> y guarda</li>
-      <li data-n="4">Haz clic en <strong>Implementar → Nueva implementación</strong> como "Aplicación web", acceso "Cualquier persona"</li>
-      <li data-n="5">Copia la URL que te genera y pégala abajo</li>
-    </ol>
-    <div class="modal-field">
-      <label>URL del Apps Script (Web App URL)</label>
-      <input type="url" id="scriptUrl" placeholder="https://script.google.com/macros/s/ABC.../exec">
-      <p class="modal-hint">Esta URL es la que conecta esta app con tu Google Sheet. Solo tú la tienes.</p>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="saveConfig()">Guardar y conectar</button>
-      <button class="btn-secondary" onclick="useDemoMode()">Usar modo demo</button>
-    </div>
-  </div>
-</div>
+<!-- SETUP MODAL (deshabilitado) -->
+<div class="modal-overlay hidden" id="setupModal"></div>
 
 <!-- HEADER -->
 <header class="site-header">
@@ -588,13 +563,6 @@
           <path d="M8 2.5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         Sincronizar
-      </button>
-      <button class="sync-btn" onclick="showSetup()" style="margin-left:4px;">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="8" cy="8" r="2.5"/>
-          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.22 3.22l1.42 1.42M11.36 11.36l1.42 1.42M3.22 12.78l1.42-1.42M11.36 4.64l1.42-1.42" stroke-linecap="round"/>
-        </svg>
-        Config
       </button>
     </div>
   </div>
@@ -683,52 +651,24 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'sasg_script_url';
 const ESTADOS = ['Pendiente','En Progreso','Completado','Bloqueado'];
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-EcIFv3v6PdKJFKETHEPZIcpSDn2oTJzXTVE9BS-wD8QvH3_cyaI6qH_yWXzrQ9Jw/exec';
 
 let allData = [];
 let filteredData = [];
-let scriptUrl = '';
-let demoMode = false;
+let scriptUrl = SCRIPT_URL;
 
 // ─── INIT ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
-  scriptUrl = localStorage.getItem(STORAGE_KEY) || '';
-  if (!scriptUrl) {
-    document.getElementById('setupModal').classList.remove('hidden');
-  } else {
-    document.getElementById('setupModal').classList.add('hidden');
-    loadData();
-  }
+  loadData();
 });
 
-function showSetup() {
-  document.getElementById('scriptUrl').value = scriptUrl;
-  document.getElementById('setupModal').classList.remove('hidden');
-}
-
-function saveConfig() {
-  const url = document.getElementById('scriptUrl').value.trim();
-  if (!url.startsWith('https://script.google.com')) {
-    alert('Por favor ingresa una URL válida de Google Apps Script.');
-    return;
-  }
-  scriptUrl = url;
-  localStorage.setItem(STORAGE_KEY, scriptUrl);
-  demoMode = false;
-  document.getElementById('setupModal').classList.add('hidden');
-  loadData();
-}
-
-function useDemoMode() {
-  demoMode = true;
-  document.getElementById('setupModal').classList.add('hidden');
-  loadDemoData();
-}
+function showSetup() { /* deshabilitado */ }
+function saveConfig() { /* deshabilitado */ }
+function useDemoMode() { /* deshabilitado */ }
 
 // ─── DATA LOAD ─────────────────────────────────────────────────────────────
 async function loadData() {
-  if (demoMode) { loadDemoData(); return; }
   setSync('Sincronizando…');
   try {
     const res = await fetch(`${scriptUrl}?action=get`, { mode: 'cors' });
@@ -739,18 +679,12 @@ async function loadData() {
       render();
     }
   } catch(e) {
-    setSync('Error de conexión');
-    if (!allData.length) loadDemoData();
+    setSync('Error de conexión — reintentando…');
+    setTimeout(loadData, 5000);
   }
 }
 
 async function updateRow(rowIndex, newEstado, indicator) {
-  if (demoMode) {
-    allData[rowIndex].Estado = newEstado;
-    updateKPIs();
-    flash(indicator, 'saved', 'Guardado');
-    return;
-  }
   flash(indicator, 'saving', 'Guardando…');
   try {
     const body = new FormData();
@@ -878,43 +812,6 @@ function flash(el, type, msg) {
   el.textContent = msg;
   el.className = `save-indicator ${type} show`;
   if (type !== 'saving') setTimeout(()=>{ el.className='save-indicator'; }, 2500);
-}
-
-// ─── DEMO DATA ─────────────────────────────────────────────────────────────
-function loadDemoData() {
-  setSync('Modo demo — sin conexión real');
-  allData = [
-{"Proceso":"AYB","Item Observado":"Capacitar al personal en la politica SASG y programas SASG","Responsables":"Kim","Estado":"Pendiente"},
-{"Proceso":"AYB","Item Observado":"Reforzar como deben reportar actos y condiciones inseguras en Zyght","Responsables":"Kim","Estado":"Pendiente"},
-{"Proceso":"AYB","Item Observado":"Socializar comites TH SASG con el equipo","Responsables":"Kim","Estado":"Completado"},
-{"Proceso":"AYB","Item Observado":"Capacitación en BPM, conservación de alimentos, buenas practicas de almacenamiento","Responsables":"Amparo","Estado":"En Progreso"},
-{"Proceso":"AYB","Item Observado":"Registros de entrega de EPP (Zapatos de seguridad, lentes y guantes de steward)","Responsables":"Dante","Estado":"Pendiente"},
-{"Proceso":"AYB","Item Observado":"Diligenciar los formatos de AyB (Servicio y Producción, incluir controles de T°)","Responsables":"Jun / Murilo","Estado":"En Progreso"},
-{"Proceso":"AYB","Item Observado":"Realizar rotulado estricto diario en alimentos camaras, reorganizar alimentos evitando contaminación cruzada","Responsables":"Jun / Murilo","Estado":"Pendiente"},
-{"Proceso":"AYB","Item Observado":"Mejorar limpieza y orden en Bar, organizar la zona administrativa en bar","Responsables":"Jun","Estado":"Bloqueado"},
-{"Proceso":"AYB","Item Observado":"Revisar tablas de colores según especificación, incluir cuchillos de colores","Responsables":"Murilo / Paola","Estado":"Pendiente"},
-{"Proceso":"AYB","Item Observado":"Los químicos deben contar con bandejas de contencion","Responsables":"Murilo","Estado":"Completado"},
-{"Proceso":"HK","Item Observado":"Capacitar al personal en la politica SASG y programas SASG","Responsables":"Kim","Estado":"En Progreso"},
-{"Proceso":"HK","Item Observado":"Reforzar como deben reportar actos y condiciones inseguras en Zyght","Responsables":"Kim","Estado":"Pendiente"},
-{"Proceso":"HK","Item Observado":"Revisar compra zapatos antideslizantes a colaboradores del area","Responsables":"Dante / Paola","Estado":"Pendiente"},
-{"Proceso":"HK","Item Observado":"Los productos quimicos no cuentan con bandejas de contención","Responsables":"Andrea","Estado":"Completado"},
-{"Proceso":"HK","Item Observado":"Las hojas MSDS deben estar al alcance de los usuarios de sust. Quimicas","Responsables":"Andrea","Estado":"En Progreso"},
-{"Proceso":"Mantenimiento","Item Observado":"Capacitar al personal en la politica SASG y programas SASG","Responsables":"Kim","Estado":"Pendiente"},
-{"Proceso":"Mantenimiento","Item Observado":"Evidencias de mantenimiento preventivo, curativo y correctivo de todos los equipos","Responsables":"Juan","Estado":"En Progreso"},
-{"Proceso":"Mantenimiento","Item Observado":"Los productos quimicos deben contar con bandejas de contención","Responsables":"Juan","Estado":"Bloqueado"},
-{"Proceso":"Mantenimiento","Item Observado":"Contar con matriz de necesidades EPP","Responsables":"","Estado":"Pendiente"},
-{"Proceso":"GI","Item Observado":"Contar con matriz IPERC actualizada al año y expuesta en areas","Responsables":"Dante / Kim","Estado":"En Progreso"},
-{"Proceso":"GI","Item Observado":"Contar con matriz ambiental","Responsables":"Kim","Estado":"Pendiente"},
-{"Proceso":"GI","Item Observado":"Contar con registro de simulacros de sismo, incendios y derrame MATPEL","Responsables":"Dante","Estado":"Completado"},
-{"Proceso":"Contraloria","Item Observado":"Contar con area de cuarentena en almacen central de productos","Responsables":"Paola","Estado":"Pendiente"},
-{"Proceso":"Contraloria","Item Observado":"Contar con registros en almacen y recepción de mercaderia","Responsables":"Paola","Estado":"En Progreso"},
-{"Proceso":"TH","Item Observado":"Mantener actualizado Gbook","Responsables":"Amparo","Estado":"Completado"},
-{"Proceso":"Front","Item Observado":"Contar con registro de acompañantes","Responsables":"Ivanova","Estado":"Pendiente"},
-{"Proceso":"Front","Item Observado":"Seguimiento a pausas activas, contar con registro","Responsables":"Kim","Estado":"En Progreso"},
-{"Proceso":"Gerencia","Item Observado":"Evidenciar registros de socialización de Planificación estrategica","Responsables":"Ivan","Estado":"Pendiente"},
-{"Proceso":"TI","Item Observado":"Autorización de datos personales, contar con registros de ADDP firmados","Responsables":"Pedro / Kim","Estado":"Pendiente"}
-  ];
-  render();
 }
 </script>
 </body>

@@ -557,7 +557,8 @@
     </div>
     <div class="header-meta">
       <span class="sync-status" id="syncStatus">No conectado</span>
-      <button class="sync-btn" onclick="loadData()">
+      <span class="sync-status" id="countdown" style="margin-right:4px;color:rgba(255,255,255,0.25);font-size:10px;"></span>
+      <button class="sync-btn" onclick="manualSync()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke-linecap="round"/>
           <path d="M8 2.5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -657,11 +658,38 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-EcIFv3v6PdKJFKETH
 let allData = [];
 let filteredData = [];
 let scriptUrl = SCRIPT_URL;
+let countdownInterval = null;
+let secondsLeft = 30;
+const SYNC_EVERY = 30;
 
 // ─── INIT ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   loadData();
+  startAutoSync();
 });
+
+function startAutoSync() {
+  if (countdownInterval) clearInterval(countdownInterval);
+  secondsLeft = SYNC_EVERY;
+  countdownInterval = setInterval(() => {
+    secondsLeft--;
+    const el = document.getElementById('countdown');
+    if (el) el.textContent = `↻ ${secondsLeft}s`;
+    if (secondsLeft <= 0) {
+      secondsLeft = SYNC_EVERY;
+      silentSync();
+    }
+  }, 1000);
+}
+
+function resetCountdown() {
+  secondsLeft = SYNC_EVERY;
+}
+
+function manualSync() {
+  resetCountdown();
+  loadData();
+}
 
 function showSetup() { /* deshabilitado */ }
 function saveConfig() { /* deshabilitado */ }
@@ -681,6 +709,21 @@ async function loadData() {
   } catch(e) {
     setSync('Error de conexión — reintentando…');
     setTimeout(loadData, 5000);
+  }
+}
+
+async function silentSync() {
+  try {
+    const res = await fetch(`${scriptUrl}?action=get`, { mode: 'cors' });
+    const json = await res.json();
+    if (json.data) {
+      allData = json.data;
+      setSync('Actualizado · ' + timeNow());
+      updateKPIs();
+      applyFilters();
+    }
+  } catch(e) {
+    // silencioso, no interrumpir al usuario
   }
 }
 
@@ -771,6 +814,7 @@ function handleChange(sel) {
   const estClass = 's-' + newEst.replace(' ','-');
   sel.className = `status-select ${estClass}`;
   const indicator = document.getElementById(`ind-${orig}`);
+  resetCountdown();
   updateRow(orig, newEst, indicator);
 }
 

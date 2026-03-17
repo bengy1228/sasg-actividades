@@ -621,8 +621,8 @@ const SCRIPT_URL     = 'https://script.google.com/macros/s/AKfycbx0cbp7aVzmSuL_e
 const SCRIPT_URL_CAP = 'https://script.google.com/macros/s/AKfycbwg2qPolmywwdvPZzxhWvuX4jDEXN--XFOCmkSppgEeMBJPk1-29aeb7FrBVsl8MND9/exec';
 
 let allData=[], capData=[], filteredData=[], capFilteredData=[];
-let countdownInterval=null, secondsLeft=15;
-const SYNC_EVERY=15;
+let countdownInterval=null, secondsLeft=60;
+const SYNC_EVERY=60;
 
 // Dashboard state
 let dashView = 'act'; // 'act' | 'cap' | 'both'
@@ -704,22 +704,20 @@ async function silentSync() {
     const res=await fetch(`${SCRIPT_URL}?action=get`,{mode:'cors'});
     const json=await res.json();
     if(json.data){
-      // Merge inteligente: actualizar allData fila por fila en lugar de
-      // reemplazar el array completo, para no pisar cambios locales pendientes.
       if(allData.length === json.data.length){
         json.data.forEach((row,i)=>{
-          // Solo actualizar campos que NO estén siendo editados activamente
-          // (los cambios locales ya están en allData[i] desde handleFieldChange)
           Object.keys(row).forEach(k=>{ allData[i][k]=row[k]; });
         });
       } else {
-        // Si cambió el número de filas (se agregó o eliminó una fila),
-        // reemplazar completo es la única opción correcta.
+        // Cambió número de filas: reemplazar y re-renderizar completo
         allData=json.data;
+        populateFilters();
+        applyFilters();
       }
       setSync('Actualizado · '+timeNow());
+      // Solo actualizar KPIs — NO re-renderizar la tabla para no destruir
+      // los <select> que el usuario acaba de cambiar
       updateKPIs();
-      applyFilters();
       if(document.getElementById('panel-dashboard').classList.contains('active')) renderDashboard();
     }
   } catch(e){}
@@ -744,9 +742,11 @@ async function silentCapSync() {
         });
       } else {
         capData=json.data;
+        populateCapFilters();
+        applyCapFilters();
       }
+      // Solo actualizar KPIs — NO re-renderizar la tabla
       updateCapKPIs();
-      applyCapFilters();
       if(document.getElementById('panel-dashboard').classList.contains('active')) renderDashboard();
     }
   } catch(e){}

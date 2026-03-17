@@ -617,8 +617,8 @@
 // ══ CONFIG ════════════════════════════════════════════════════════════════
 const ESTADOS     = ['Por Iniciar','En Proceso','Por Terminar','Completado'];
 const PRIORIDADES = ['Alta','Media','Baja'];
-const SCRIPT_URL     = 'https://script.google.com/macros/s/AKfycbx0cbp7aVzmSuL_eJt2glO3xyb9Zk7owOEMS2Yxsozb1jM5A25zxs3pUgWEV1rKSqp1UQ/exec';
-const SCRIPT_URL_CAP = 'https://script.google.com/macros/s/AKfycbwg2qPolmywwdvPZzxhWvuX4jDEXN--XFOCmkSppgEeMBJPk1-29aeb7FrBVsl8MND9/exec';
+const SCRIPT_URL     = 'https://script.google.com/macros/s/AKfycbx-EcIFv3v6PdKJFKETHEPZIcpSDn2oTJzXTVE9BS-wD8QvH3_cyaI6qH_yWXzrQ9Jw/exec';
+const SCRIPT_URL_CAP = 'https://script.google.com/macros/s/AKfycbytttFCLTmlba2rkhQ9jgRJcfuBtlHcwsWSZJFt_ZpFYhn3sN67OGMk5W-MhMhaafKG/exec';
 
 let allData=[], capData=[], filteredData=[], capFilteredData=[];
 let countdownInterval=null, secondsLeft=15;
@@ -830,11 +830,20 @@ function updateKPIs(){
 }
 
 function populateFilters(){
+  // Guardar valores actuales antes de reconstruir
+  const selProceso     = document.getElementById('filterProceso').value;
+  const selResponsable = document.getElementById('filterResponsable').value;
+
   const procs=[...new Set(allData.map(r=>(r['Proceso']||'').trim()).filter(Boolean))].sort();
   document.getElementById('filterProceso').innerHTML='<option value="">Todos los procesos</option>'+procs.map(p=>`<option value="${p}">${p}</option>`).join('');
+
   const resps=[...new Set(allData.flatMap(r=>(r['Responsables']||'').split('/').map(x=>x.trim())).filter(Boolean))].sort();
   document.getElementById('filterResponsable').innerHTML='<option value="">Todos los responsables</option>'+resps.map(r=>`<option value="${r}">${r}</option>`).join('');
-  // also populate dashboard filters
+
+  // Restaurar selecciones previas si el valor aún existe en los nuevos datos
+  if(selProceso)     document.getElementById('filterProceso').value     = selProceso;
+  if(selResponsable) document.getElementById('filterResponsable').value = selResponsable;
+
   populateDashFilters();
 }
 
@@ -908,10 +917,20 @@ function updateCapKPIs(){
 }
 
 function populateCapFilters(){
+  // Guardar valores actuales antes de reconstruir
+  const selArea = document.getElementById('capFilterArea').value;
+  const selResp = document.getElementById('capFilterResp').value;
+
   const areas=[...new Set(capData.map(r=>(r['Area']||'').trim()).filter(Boolean))].sort();
   document.getElementById('capFilterArea').innerHTML='<option value="">Todas las áreas</option>'+areas.map(a=>`<option value="${a}">${a}</option>`).join('');
+
   const resps=[...new Set(capData.map(r=>(r['Responsable']||'').trim()).filter(Boolean))].sort();
   document.getElementById('capFilterResp').innerHTML='<option value="">Todos los responsables</option>'+resps.map(r=>`<option value="${r}">${r}</option>`).join('');
+
+  // Restaurar selecciones previas si el valor aún existe en los nuevos datos
+  if(selArea) document.getElementById('capFilterArea').value = selArea;
+  if(selResp) document.getElementById('capFilterResp').value = selResp;
+
   populateDashFilters();
 }
 

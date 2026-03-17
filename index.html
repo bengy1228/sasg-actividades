@@ -699,29 +699,47 @@ async function loadData() {
     if(json.data){ allData=json.data; setSync('Sincronizado · '+timeNow()); render(); }
   } catch(e){ setSync('Error de conexión — reintentando…'); setTimeout(loadData,5000); }
 }
+
 async function silentSync() {
   try {
     const res=await fetch(`${SCRIPT_URL}?action=get`,{mode:'cors'});
     const json=await res.json();
-    if(json.data){
-      if(allData.length === json.data.length){
-        json.data.forEach((row,i)=>{
-          Object.keys(row).forEach(k=>{ allData[i][k]=row[k]; });
-        });
-      } else {
-        // Cambió número de filas: reemplazar y re-renderizar completo
-        allData=json.data;
-        populateFilters();
-        applyFilters();
-      }
-      setSync('Actualizado · '+timeNow());
-      // Solo actualizar KPIs — NO re-renderizar la tabla para no destruir
-      // los <select> que el usuario acaba de cambiar
-      updateKPIs();
+    if(!json.data) return;
+    setSync('Actualizado · '+timeNow());
+
+    if(allData.length !== json.data.length){
+      // Cambió número de filas → recarga completa inevitable
+      allData=json.data;
+      populateFilters(); applyFilters(); updateKPIs();
       if(document.getElementById('panel-dashboard').classList.contains('active')) renderDashboard();
+      return;
     }
+
+    // Detectar qué filas cambiaron respecto a lo que tenemos en memoria
+    // y actualizar SOLO esas filas en el DOM sin tocar las demás
+    const changedRows=[];
+    json.data.forEach((row,i)=>{
+      let changed=false;
+      Object.keys(row).forEach(k=>{
+        if(String(row[k])!==String(allData[i][k]||'')){
+          allData[i][k]=row[k];
+          changed=true;
+        }
+      });
+      if(changed) changedRows.push(i);
+    });
+
+    updateKPIs();
+    if(document.getElementById('panel-dashboard').classList.contains('active')) renderDashboard();
+
+    // Actualizar quirúrgicamente solo las filas que cambiaron en otros dispositivos
+    changedRows.forEach(origIndex=>{
+      patchRowInDOM(origIndex,'actividades');
+    });
+
   } catch(e){}
 }
+
 async function loadCapData() {
   if(SCRIPT_URL_CAP==='PEGA_AQUI_URL_CAPACITACIONES') return;
   try {
@@ -730,26 +748,101 @@ async function loadCapData() {
     if(json.data){ capData=json.data; renderCap(); }
   } catch(e){}
 }
+
 async function silentCapSync() {
   if(SCRIPT_URL_CAP==='PEGA_AQUI_URL_CAPACITACIONES') return;
   try {
     const res=await fetch(`${SCRIPT_URL_CAP}?action=get`,{mode:'cors'});
     const json=await res.json();
-    if(json.data){
-      if(capData.length === json.data.length){
-        json.data.forEach((row,i)=>{
-          Object.keys(row).forEach(k=>{ capData[i][k]=row[k]; });
-        });
-      } else {
-        capData=json.data;
-        populateCapFilters();
-        applyCapFilters();
-      }
-      // Solo actualizar KPIs — NO re-renderizar la tabla
-      updateCapKPIs();
+    if(!json.data) return;
+
+    if(capData.length !== json.data.length){
+      capData=json.data;
+      populateCapFilters(); applyCapFilters(); updateCapKPIs();
       if(document.getElementById('panel-dashboard').classList.contains('active')) renderDashboard();
+      return;
     }
+
+    const changedRows=[];
+    json.data.forEach((row,i)=>{
+      let changed=false;
+      Object.keys(row).forEach(k=>{
+        if(String(row[k])!==String(capData[i][k]||'')){
+          capData[i][k]=row[k];
+          changed=true;
+        }
+      });
+      if(changed) changedRows.push(i);
+    });
+
+    updateCapKPIs();
+    if(document.getElementById('panel-dashboard').classList.contains('active')) renderDashboard();
+
+    changedRows.forEach(origIndex=>{
+      patchRowInDOM(origIndex,'capacitaciones');
+    });
+
   } catch(e){}
+}
+
+// ══ PATCH ROW — actualiza quirúrgicamente solo los campos que cambiaron ════
+// Busca la fila en el DOM por data-orig y actualiza solo los elementos
+// internos, SIN destruir ni recrear el <tr>
+function patchRowInDOM(origIndex, panel){
+  const data = panel==='actividades' ? allData : capData;
+  const row  = data[origIndex];
+  if(!row) return;
+
+  // Selector: busca el <select> de Estado cuyo data-orig coincide
+  // dentro del panel correcto, así no hay colisión entre tablas
+  const panelEl = document.getElementById('panel-'+panel);
+  if(!panelEl) return;
+
+  // Estado
+  const estSel = panelEl.querySelector(`select[data-field="Estado"][data-orig="${origIndex}"]`);
+  if(estSel){
+    const est = row['Estado']||'Por Iniciar';
+    if(estSel.value !== est){
+      estSel.value = est;
+      estSel.className = `status-select s-${est.replace(/ /g,'-')}`;
+    }
+  }
+
+  // Prioridad
+  const prioSel = panelEl.querySelector(`select[data-field="Prioridad"][data-orig="${origIndex}"]`);
+  if(prioSel){
+    const prio = row['Prioridad']||'';
+    if(prioSel.value !== prio){
+      prioSel.value = prio;
+      prioSel.className = `prio-select prio-${prio||'empty'}`;
+    }
+  }
+
+  // Fecha Inicio
+  const fIniInput = panelEl.querySelector(`input[data-field="FechaInicio"][data-orig="${origIndex}"]`);
+  if(fIniInput && fIniInput.value !== (row['FechaInicio']||'')){
+    fIniInput.value = row['FechaInicio']||'';
+  }
+
+  // Fecha Final
+  const fFinInput = panelEl.querySelector(`input[data-field="FechaFinal"][data-orig="${origIndex}"]`);
+  if(fFinInput && fFinInput.value !== (row['FechaFinal']||'')){
+    fFinInput.value = row['FechaFinal']||'';
+  }
+
+  // Duración (recalcular si cambió alguna fecha)
+  const durId = panel==='actividades' ? `dur-act-${origIndex}` : `dur-cap-${origIndex}`;
+  const durEl = document.getElementById(durId);
+  if(durEl){
+    const newBadge = durBadge(row['FechaInicio']||'', row['FechaFinal']||'');
+    if(durEl.innerHTML !== newBadge) durEl.innerHTML = newBadge;
+  }
+
+  // Observaciones
+  const obsTA = panelEl.querySelector(`textarea[data-field="Observaciones"][data-orig="${origIndex}"]`);
+  if(obsTA && obsTA.value !== (row['Observaciones']||'')){
+    obsTA.value = row['Observaciones']||'';
+  }
 }
 
 // ══ SAVE ══════════════════════════════════════════════════════════════════
@@ -763,41 +856,46 @@ async function saveField(scriptUrl,rowIndex,field,value,indicator) {
     const res=await fetch(scriptUrl,{method:'POST',body,mode:'cors'});
     const json=await res.json();
     if(json.success){ flash(indicator,'saved','Guardado'); setSync('Guardado · '+timeNow()); }
-    else flash(indicator,'error','Error');
-  } catch(e){ flash(indicator,'error','Error'); }
+    else { flash(indicator,'error','Error al guardar'); }
+  } catch(e){ flash(indicator,'error','Sin conexión'); }
 }
 
-// ══ FIELD CHANGE ══════════════════════════════════════════════════════════
+// ══ FIELD CHANGE — cambio inmediato en DOM + memoria + servidor ═══════════
 function handleFieldChange(el,panel) {
-  const orig=parseInt(el.dataset.orig);
-  const field=el.dataset.field;
-  const value=el.value;
-  const url=panel==='actividades'?SCRIPT_URL:SCRIPT_URL_CAP;
-  const data=panel==='actividades'?allData:capData;
-  const indId=panel==='actividades'?`ind-${orig}`:`cap-ind-${orig}`;
-  const indicator=document.getElementById(indId);
+  const orig  = parseInt(el.dataset.orig);
+  const field = el.dataset.field;
+  const value = el.value;
+  const url   = panel==='actividades' ? SCRIPT_URL : SCRIPT_URL_CAP;
+  const data  = panel==='actividades' ? allData    : capData;
+  const indId = panel==='actividades' ? `ind-${orig}` : `cap-ind-${orig}`;
+  const indicator = document.getElementById(indId);
 
-  // ── Actualizar en memoria INMEDIATAMENTE ──────────────────────────────
-  // Esto evita que el próximo auto-sync sobreescriba el valor visual
-  // con el dato anterior antes de que el servidor confirme el guardado.
+  // 1. Actualizar memoria inmediatamente (evita parpadeo en el próximo sync)
   data[orig][field] = value;
 
-  // Visual immediacy
+  // 2. Actualizar clases visuales del elemento cambiado
   if(field==='Estado')    el.className=`status-select s-${value.replace(/ /g,'-')}`;
   if(field==='Prioridad') el.className=`prio-select prio-${value||'empty'}`;
 
-  // Recalcular duración si cambia fecha
+  // 3. Recalcular duración si cambió fecha
   if(field==='FechaInicio'||field==='FechaFinal'){
-    const fIni=data[orig]['FechaInicio']||'',fFin=data[orig]['FechaFinal']||'';
-    const durId=panel==='actividades'?`dur-act-${orig}`:`dur-cap-${orig}`;
+    const durId = panel==='actividades' ? `dur-act-${orig}` : `dur-cap-${orig}`;
+    const fIni=data[orig]['FechaInicio']||'', fFin=data[orig]['FechaFinal']||'';
     const durEl=document.getElementById(durId);
     if(durEl) durEl.innerHTML=durBadge(fIni,fFin);
   }
 
-  if(field==='Estado'){ updateKPIs(); if(panel==='capacitaciones') updateCapKPIs(); }
+  // 4. Actualizar KPIs si cambió el estado
+  if(field==='Estado'){
+    updateKPIs();
+    if(panel==='capacitaciones') updateCapKPIs();
+  }
+
+  // 5. Enviar al servidor (asíncrono, no bloquea nada)
   resetCountdown();
   saveField(url,orig,field,value,indicator);
 }
+
 
 // ══ ACTIVIDADES RENDER ════════════════════════════════════════════════════
 function render(){ populateFilters(); applyFilters(); updateKPIs(); }

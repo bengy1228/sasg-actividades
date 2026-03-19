@@ -287,8 +287,23 @@
   .mini-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle;}
   .dash-divider{font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:500;color:var(--text-3);letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:8px;margin:1.5rem 0 1rem;}
 
+  /* ══ REQUERIMIENTOS — estilos nuevos ══ */
+  .req-kpi-strip{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr;gap:12px;margin-bottom:1.5rem;}
+  /* estados de requerimiento */
+  .req-status-select{font-family:'Figtree',sans-serif;font-size:11px;font-weight:500;border-radius:3px;border:1px solid;padding:4px 18px 4px 7px;width:100%;cursor:pointer;outline:none;transition:box-shadow 0.15s;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' stroke='%238a95a5' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center;}
+  .req-status-select:focus{box-shadow:0 0 0 3px rgba(184,147,90,0.15);}
+  .rs-No-iniciado{background:#f0f0ee;color:#4a5568;border-color:#cacac4;}
+  .rs-Cotizando{background:#fdf5e4;color:#7a5000;border-color:#e8c96a;}
+  .rs-Aprobado{background:#e8f0f8;color:#1a3970;border-color:#c0d0ea;}
+  .rs-Comprado{background:#f0eaf8;color:#45187a;border-color:#ccb0e8;}
+  .rs-En-transito{background:#fff2ea;color:#8b4010;border-color:#f0c090;}
+  .rs-Recibido{background:#e8f8f2;color:#0a5040;border-color:#a8d8c8;}
+  .rs-Implementado{background:#edf5f0;color:#2d6b4f;border-color:#b0d4c0;}
+  .zona-tag{font-size:10px;font-weight:500;padding:2px 7px;border-radius:2px;white-space:nowrap;display:inline-block;background:var(--bg-card-alt);border:1px solid var(--border);color:var(--text-2);}
+  .desc-cell{max-width:220px;font-size:12px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help;}
+
   @media(max-width:900px){
-    .kpi-strip{grid-template-columns:1fr 1fr;}
+    .kpi-strip,.req-kpi-strip{grid-template-columns:1fr 1fr;}
     .kpi-card.kpi-main{grid-column:1/-1;}
     .main-wrap{padding:1rem;}
     .chart-grid-2,.chart-grid-3,.chart-grid-12{grid-template-columns:1fr;}
@@ -379,6 +394,13 @@
         <path d="M2 5v5c0 1.5 2.7 3 6 3s6-1.5 6-3V5" stroke-linecap="round"/>
       </svg>
       Capacitaciones
+    </button>
+    <button class="nav-tab" onclick="switchTab('requerimientos')" id="tab-requerimientos">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M2 3h12M2 6h8M2 9h10M2 12h6" stroke-linecap="round"/>
+        <circle cx="13" cy="11" r="2.2"/><path d="M13 9.8v1.2l.8.8" stroke-linecap="round"/>
+      </svg>
+      Requerimientos
     </button>
   </div>
 </nav>
@@ -614,6 +636,62 @@
   </div>
 </div>
 
+<!-- ══ PANEL: REQUERIMIENTOS ══ (NUEVO) -->
+<div class="panel" id="panel-requerimientos">
+  <div class="req-kpi-strip">
+    <div class="kpi-card kpi-main">
+      <div class="kpi-label">Avance de requerimientos</div>
+      <div class="kpi-value" id="reqKpiPct">0%</div>
+      <div class="progress-track"><div class="progress-fill" id="reqKpiBar" style="width:0%"></div></div>
+      <div class="kpi-sub" id="reqKpiSub">0 de 0 implementados</div>
+    </div>
+    <div class="kpi-card"><div class="kpi-label">No iniciado</div><div class="kpi-value" id="reqKpi0" style="color:var(--gray)">0</div><div class="kpi-sub"><span class="kpi-dot" style="background:#8a95a5"></span>Pendiente</div></div>
+    <div class="kpi-card"><div class="kpi-label">Cotizando</div><div class="kpi-value" id="reqKpi1" style="color:var(--amber)">0</div><div class="kpi-sub"><span class="kpi-dot" style="background:#e8c96a"></span>En gestión</div></div>
+    <div class="kpi-card"><div class="kpi-label">Aprobado</div><div class="kpi-value" id="reqKpi2" style="color:#1a3970">0</div><div class="kpi-sub"><span class="kpi-dot" style="background:#6090c8"></span>Aprobado</div></div>
+    <div class="kpi-card"><div class="kpi-label">Comprado</div><div class="kpi-value" id="reqKpi3" style="color:#45187a">0</div><div class="kpi-sub"><span class="kpi-dot" style="background:#9060c0"></span>Adquirido</div></div>
+    <div class="kpi-card"><div class="kpi-label">En tránsito</div><div class="kpi-value" id="reqKpi4" style="color:var(--orange)">0</div><div class="kpi-sub"><span class="kpi-dot" style="background:#f0a070"></span>En camino</div></div>
+    <div class="kpi-card"><div class="kpi-label">Implementado</div><div class="kpi-value" id="reqKpi5" style="color:var(--green)">0</div><div class="kpi-sub"><span class="kpi-dot" style="background:var(--green)"></span>Finalizado</div></div>
+  </div>
+  <div class="toolbar">
+    <span class="toolbar-label">Filtros</span>
+    <input class="search-input" type="text" id="reqSearch" placeholder="Buscar requerimiento o zona…" oninput="applyReqFilters()">
+    <div class="toolbar-divider"></div>
+    <select class="filter-select" id="reqFilterZona" onchange="applyReqFilters()"><option value="">Todas las zonas</option></select>
+    <select class="filter-select" id="reqFilterPrio" onchange="applyReqFilters()">
+      <option value="">Todas las prioridades</option>
+      <option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option>
+    </select>
+    <select class="filter-select" id="reqFilterEstado" onchange="applyReqFilters()">
+      <option value="">Todos los estados</option>
+      <option value="No iniciado">No iniciado</option>
+      <option value="Cotizando">Cotizando</option>
+      <option value="Aprobado">Aprobado</option>
+      <option value="Comprado">Comprado</option>
+      <option value="En tránsito">En tránsito</option>
+      <option value="Recibido">Recibido</option>
+      <option value="Implementado">Implementado</option>
+    </select>
+    <div class="toolbar-divider"></div>
+    <span class="results-count" id="reqResultsCount">— requerimientos</span>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table" id="reqTable">
+      <thead><tr>
+        <th class="td-num">#</th>
+        <th style="min-width:180px;">Requerimiento</th>
+        <th style="min-width:130px;">Zona</th>
+        <th style="width:80px;">Cantidad</th>
+        <th style="min-width:200px;">Descripción</th>
+        <th style="width:90px;">Prioridad</th>
+        <th style="width:148px;">Estado</th>
+        <th style="min-width:160px;">Comentarios</th>
+        <th style="width:68px;text-align:center;">Guard.</th>
+      </tr></thead>
+      <tbody id="reqTableBody"><tr><td colspan="9" class="empty-state"><p>Cargando requerimientos…</p></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
 </main>
 
 <footer class="site-footer">
@@ -625,15 +703,17 @@
 // ══ CONFIG ════════════════════════════════════════════════════════════════
 const ESTADOS     = ['Por Iniciar','En Proceso','Por Terminar','Completado'];
 const PRIORIDADES = ['Alta','Media','Baja'];
+const REQ_ESTADOS = ['No iniciado','Cotizando','Aprobado','Comprado','En tránsito','Recibido','Implementado'];
 const SCRIPT_URL     = 'https://script.google.com/macros/s/AKfycbx0cbp7aVzmSuL_eJt2glO3xyb9Zk7owOEMS2Yxsozb1jM5A25zxs3pUgWEV1rKSqp1UQ/exec';
 const SCRIPT_URL_CAP = 'https://script.google.com/macros/s/AKfycbwg2qPolmywwdvPZzxhWvuX4jDEXN--XFOCmkSppgEeMBJPk1-29aeb7FrBVsl8MND9/exec';
+// 🔧 Pega aquí la URL del Apps Script de Requerimientos cuando esté listo:
+const SCRIPT_URL_REQ = 'https://script.google.com/macros/s/AKfycbxjZbs2nzizH1HnV0QMniSpdFAfYhMvhlysP2V8Mzr6ymPi6kKPZB4H5f7ykYpi0B-e/exec';
 
-let allData=[], capData=[], filteredData=[], capFilteredData=[];
+let allData=[], capData=[], reqData=[], filteredData=[], capFilteredData=[], reqFilteredData=[];
 let countdownInterval=null, secondsLeft=60;
 const SYNC_EVERY=60;
 
 // ── Sesión y roles ────────────────────────────────────────────────────────
-// currentRole: 'admin' | 'user' | null
 let currentRole = null;
 
 const AUTH_USERS = {
@@ -641,10 +721,8 @@ const AUTH_USERS = {
   holiday: { user: 'holiday', pass: '2026$',       role: 'user'  }
 };
 
-// Helpers de rol
 function isAdmin(){ return currentRole === 'admin'; }
 
-// Actualiza badge de rol en el header
 function showRoleBadge(){
   const el = document.getElementById('roleBadge');
   if(!el) return;
@@ -658,7 +736,6 @@ function showRoleBadge(){
   el.style.display = 'inline-block';
 }
 
-// Actualiza headers de la columna Material de Consulta según rol
 function updateMaterialHeaders(){
   const badge = isAdmin()
     ? `<span class="th-admin-badge">editable</span>`
@@ -678,7 +755,7 @@ const PRIO_COLORS    = { 'Alta':'#ef4444','Media':'#f59e0b','Baja':'#22c55e','':
 const DPTO_PALETTE   = ['#6366f1','#0ea5e9','#14b8a6','#f59e0b','#f97316','#ec4899','#8b5cf6','#22c55e','#ef4444','#64748b'];
 
 // ══ INIT ══════════════════════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => { loadData(); loadCapData(); startAutoSync(); });
+window.addEventListener('DOMContentLoaded', () => { loadData(); loadCapData(); loadReqData(); startAutoSync(); });
 
 // ══ TABS ══════════════════════════════════════════════════════════════════
 function switchTab(t) {
@@ -697,11 +774,11 @@ function startAutoSync() {
     secondsLeft--;
     const el=document.getElementById('countdown');
     if(el) el.textContent=`↻ ${secondsLeft}s`;
-    if(secondsLeft<=0){ secondsLeft=SYNC_EVERY; silentSync(); silentCapSync(); }
+    if(secondsLeft<=0){ secondsLeft=SYNC_EVERY; silentSync(); silentCapSync(); silentReqSync(); }
   },1000);
 }
 function resetCountdown(){ secondsLeft=SYNC_EVERY; }
-function manualSync(){ resetCountdown(); loadData(); loadCapData(); }
+function manualSync(){ resetCountdown(); loadData(); loadCapData(); loadReqData(); }
 function showSetup(){} function saveConfig(){} function useDemoMode(){}
 
 // ══ DURATION ══════════════════════════════════════════════════════════════
@@ -730,13 +807,10 @@ function durBadge(fIni,fFin) {
 }
 
 // ══ MATERIAL DE CONSULTA — renderizar celda según rol ═════════════════════
-// Admin: textarea editable para escribir/pegar un link
-// User (holiday): enlace clicable que abre en nueva pestaña
 function renderMaterialCell(orig, value, panel) {
   const val = (value || '').trim();
 
   if (isAdmin()) {
-    // Admin: textarea editable
     return `<td class="td-material">
       <textarea
         class="material-input"
@@ -748,11 +822,8 @@ function renderMaterialCell(orig, value, panel) {
       >${escHtml(val)}</textarea>
     </td>`;
   } else {
-    // User: solo visualización/clic
     if (val) {
-      // Intentar detectar si parece URL válida
       const href = val.startsWith('http') ? val : 'https://' + val;
-      // Texto corto para mostrar en el botón
       let displayText = val;
       try {
         const u = new URL(href);
@@ -846,6 +917,39 @@ async function silentCapSync() {
   } catch(e){}
 }
 
+// ── REQUERIMIENTOS: carga ─────────────────────────────────────────────────
+async function loadReqData() {
+  if(SCRIPT_URL_REQ==='PEGA_AQUI_URL_REQUERIMIENTOS'){
+    renderReq();
+    return;
+  }
+  try {
+    const res=await fetch(`${SCRIPT_URL_REQ}?action=get`,{mode:'cors'});
+    const json=await res.json();
+    if(json.data){ reqData=json.data; renderReq(); }
+  } catch(e){ renderReq(); }
+}
+
+async function silentReqSync() {
+  if(SCRIPT_URL_REQ==='PEGA_AQUI_URL_REQUERIMIENTOS') return;
+  try {
+    const res=await fetch(`${SCRIPT_URL_REQ}?action=get`,{mode:'cors'});
+    const json=await res.json();
+    if(!json.data) return;
+    if(reqData.length !== json.data.length){
+      reqData=json.data; populateReqFilters(); applyReqFilters(); updateReqKPIs(); return;
+    }
+    const changedRows=[];
+    json.data.forEach((row,i)=>{
+      let changed=false;
+      Object.keys(row).forEach(k=>{ if(String(row[k])!==String(reqData[i][k]||'')){ reqData[i][k]=row[k]; changed=true; } });
+      if(changed) changedRows.push(i);
+    });
+    updateReqKPIs();
+    changedRows.forEach(i=>patchReqRowInDOM(i));
+  } catch(e){}
+}
+
 // ══ PATCH ROW ═════════════════════════════════════════════════════════════
 function patchRowInDOM(origIndex, panel){
   const data = panel==='actividades' ? allData : capData;
@@ -873,12 +977,21 @@ function patchRowInDOM(origIndex, panel){
   if(durEl){ const nb = durBadge(row['FechaInicio']||'', row['FechaFinal']||''); if(durEl.innerHTML !== nb) durEl.innerHTML = nb; }
   const obsTA = panelEl.querySelector(`textarea[data-field="Observaciones"][data-orig="${origIndex}"]`);
   if(obsTA && obsTA.value !== (row['Observaciones']||'')) obsTA.value = row['Observaciones']||'';
-
-  // Patch Material de Consulta (solo admin puede editar, pero el patch actualiza en memoria igual)
   if(isAdmin()){
     const matTA = panelEl.querySelector(`textarea[data-field="MaterialConsulta"][data-orig="${origIndex}"]`);
     if(matTA && matTA.value !== (row['MaterialConsulta']||'')) matTA.value = row['MaterialConsulta']||'';
   }
+}
+
+function patchReqRowInDOM(origIndex){
+  const row = reqData[origIndex]; if(!row) return;
+  const panelEl = document.getElementById('panel-requerimientos'); if(!panelEl) return;
+  const estSel = panelEl.querySelector(`select[data-field="ESTADO"][data-orig="${origIndex}"]`);
+  if(estSel){ const est=row['ESTADO']||'No iniciado'; if(estSel.value!==est){ estSel.value=est; estSel.className=`req-status-select ${reqEstadoCls(est)}`; } }
+  const prioSel = panelEl.querySelector(`select[data-field="PRIORIDAD"][data-orig="${origIndex}"]`);
+  if(prioSel){ const p=(row['PRIORIDAD']||'').toLowerCase(); if(prioSel.value!==p){ prioSel.value=p; prioSel.className=`prio-select ${reqPrioCls(p)}`; } }
+  const comTA = panelEl.querySelector(`textarea[data-field="COMENTARIOS"][data-orig="${origIndex}"]`);
+  if(comTA && comTA.value!==(row['COMENTARIOS']||'')) comTA.value=row['COMENTARIOS']||'';
 }
 
 // ══ SAVE ══════════════════════════════════════════════════════════════════
@@ -898,21 +1011,22 @@ async function saveField(scriptUrl,rowIndex,field,value,indicator) {
 
 // ══ FIELD CHANGE ══════════════════════════════════════════════════════════
 function handleFieldChange(el,panel) {
-  // Solo admin puede cambiar MaterialConsulta
   if(el.dataset.field === 'MaterialConsulta' && !isAdmin()) return;
 
   const orig  = parseInt(el.dataset.orig);
   const field = el.dataset.field;
   const value = el.value;
-  const url   = panel==='actividades' ? SCRIPT_URL : SCRIPT_URL_CAP;
-  const data  = panel==='actividades' ? allData    : capData;
-  const indId = panel==='actividades' ? `ind-${orig}` : `cap-ind-${orig}`;
+  const url   = panel==='actividades' ? SCRIPT_URL : panel==='capacitaciones' ? SCRIPT_URL_CAP : SCRIPT_URL_REQ;
+  const data  = panel==='actividades' ? allData    : panel==='capacitaciones' ? capData : reqData;
+  const indId = panel==='actividades' ? `ind-${orig}` : panel==='capacitaciones' ? `cap-ind-${orig}` : `req-ind-${orig}`;
   const indicator = document.getElementById(indId);
 
   data[orig][field] = value;
 
   if(field==='Estado')    el.className=`status-select s-${value.replace(/ /g,'-')}`;
   if(field==='Prioridad') el.className=`prio-select prio-${value||'empty'}`;
+  if(field==='PRIORIDAD') el.className=`prio-select ${reqPrioCls(value)}`;
+  if(field==='ESTADO'){   el.className=`req-status-select ${reqEstadoCls(value)}`; updateReqKPIs(); }
 
   if(field==='FechaInicio'||field==='FechaFinal'){
     const durId = panel==='actividades' ? `dur-act-${orig}` : `dur-cap-${orig}`;
@@ -927,6 +1041,7 @@ function handleFieldChange(el,panel) {
   }
 
   resetCountdown();
+
   saveField(url,orig,field,value,indicator);
 }
 
@@ -966,10 +1081,6 @@ function renderTable(){
     const mat=row['MaterialConsulta']||'';
     const pOpts=PRIORIDADES.map(p=>`<option value="${p}" ${p===prio?'selected':''}>${p}</option>`).join('');
     const eOpts=ESTADOS.map(s=>`<option value="${s}" ${s===est?'selected':''}>${s}</option>`).join('');
-
-    // Bloquear campos editables si no es admin (prioridad, fecha, estado, obs)
-    // Material de consulta tiene su propio control de acceso
-    const roAttr = isAdmin() ? '' : 'disabled style="pointer-events:none;opacity:0.7;"';
 
     return `<tr>
       <td class="td-num">${i+1}</td>
@@ -1098,6 +1209,90 @@ function populateCapFilters(){
   if(selArea) document.getElementById('capFilterArea').value = selArea;
   if(selResp) document.getElementById('capFilterResp').value = selResp;
   populateDashFilters();
+}
+
+// ══ REQUERIMIENTOS RENDER (NUEVO) ═════════════════════════════════════════
+function renderReq(){ populateReqFilters(); applyReqFilters(); updateReqKPIs(); }
+
+function applyReqFilters(){
+  const q=document.getElementById('reqSearch').value.toLowerCase();
+  const zona=document.getElementById('reqFilterZona').value;
+  const prio=document.getElementById('reqFilterPrio').value;
+  const est=document.getElementById('reqFilterEstado').value;
+  reqFilteredData=reqData.filter((row,i)=>{
+    row._origIndex=i;
+    const mQ=!q||(row['REQUERIMIENTO']||'').toLowerCase().includes(q)||(row['ZONA']||'').toLowerCase().includes(q)||(row['DESCRIPCIÓN']||'').toLowerCase().includes(q);
+    const mZona=!zona||(row['ZONA']||'').trim()===zona;
+    const mPrio=!prio||(row['PRIORIDAD']||'').toLowerCase()===prio.toLowerCase();
+    const mEst=!est||(row['ESTADO']||'No iniciado')===est;
+    return mQ&&mZona&&mPrio&&mEst;
+  });
+  document.getElementById('reqResultsCount').textContent=`${reqFilteredData.length} requerimiento${reqFilteredData.length!==1?'s':''}`;
+  renderReqTable();
+}
+
+function reqPrioCls(p){
+  const pl=(p||'').toLowerCase();
+  if(pl==='alta') return 'prio-Alta';
+  if(pl==='media') return 'prio-Media';
+  if(pl==='baja') return 'prio-Baja';
+  return 'prio-empty';
+}
+
+function reqEstadoCls(est){
+  const map={'No iniciado':'rs-No-iniciado','Cotizando':'rs-Cotizando','Aprobado':'rs-Aprobado','Comprado':'rs-Comprado','En tránsito':'rs-En-transito','Recibido':'rs-Recibido','Implementado':'rs-Implementado'};
+  return map[est]||'rs-No-iniciado';
+}
+
+function renderReqTable(){
+  const tbody=document.getElementById('reqTableBody');
+  if(!reqData.length){ tbody.innerHTML=`<tr><td colspan="9" class="empty-state"><p>Pega la URL de tu Apps Script en <strong>SCRIPT_URL_REQ</strong> para cargar los requerimientos desde Google Sheets.</p></td></tr>`; return; }
+  if(!reqFilteredData.length){ tbody.innerHTML=`<tr><td colspan="9" class="empty-state"><p>Sin resultados para los filtros actuales.</p></td></tr>`; return; }
+  const PRIOS_REQ=['alta','media','baja'];
+  tbody.innerHTML=reqFilteredData.map((row,i)=>{
+    const orig=row._origIndex;
+    const est=row['ESTADO']||'No iniciado';
+    const prio=(row['PRIORIDAD']||'').toLowerCase();
+    const desc=escHtml(row['DESCRIPCIÓN']||'');
+    const com=row['COMENTARIOS']||'';
+    const disAttr=isAdmin()?'':' disabled style="pointer-events:none;opacity:0.7;"';
+    const roAttr=isAdmin()?'':' readonly style="background:var(--bg-card-alt);border-color:transparent;cursor:default;"';
+    const pOpts=PRIOS_REQ.map(p=>`<option value="${p}" ${p===prio?'selected':''}>${p.charAt(0).toUpperCase()+p.slice(1)}</option>`).join('');
+    const eOpts=REQ_ESTADOS.map(s=>`<option value="${s}" ${s===est?'selected':''}>${s}</option>`).join('');
+    return `<tr>
+      <td class="td-num">${i+1}</td>
+      <td style="font-size:12.5px;font-weight:400;">${escHtml(row['REQUERIMIENTO']||'')}</td>
+      <td><span class="zona-tag">${escHtml(row['ZONA']||'—')}</span></td>
+      <td style="font-size:12px;color:var(--text-2);text-align:center;">${escHtml(row['CANTIDAD']||'—')}</td>
+      <td class="desc-cell" title="${desc}">${desc}</td>
+      <td class="td-prio"><select class="prio-select ${reqPrioCls(prio)}" data-orig="${orig}" data-field="PRIORIDAD" onchange="handleFieldChange(this,'requerimientos')"${disAttr}><option value="">—</option>${pOpts}</select></td>
+      <td style="width:148px;"><select class="req-status-select ${reqEstadoCls(est)}" data-orig="${orig}" data-field="ESTADO" onchange="handleFieldChange(this,'requerimientos')"${disAttr}>${eOpts}</select></td>
+      <td class="td-obs"><textarea class="obs-input" data-orig="${orig}" data-field="COMENTARIOS" onchange="handleFieldChange(this,'requerimientos')" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" placeholder="Comentario…"${roAttr}>${escHtml(com)}</textarea></td>
+      <td style="text-align:center;padding:8px 6px;"><span class="save-indicator" id="req-ind-${orig}"></span></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateReqKPIs(){
+  const total=reqData.length;
+  const impl=reqData.filter(r=>(r['ESTADO']||'')==='Implementado').length;
+  const pct=total?Math.round(impl/total*100):0;
+  document.getElementById('reqKpiPct').textContent=pct+'%';
+  document.getElementById('reqKpiBar').style.width=pct+'%';
+  document.getElementById('reqKpiSub').textContent=`${impl} de ${total} implementados`;
+  document.getElementById('reqKpi0').textContent=reqData.filter(r=>(r['ESTADO']||'No iniciado')==='No iniciado').length;
+  document.getElementById('reqKpi1').textContent=reqData.filter(r=>(r['ESTADO']||'')==='Cotizando').length;
+  document.getElementById('reqKpi2').textContent=reqData.filter(r=>(r['ESTADO']||'')==='Aprobado').length;
+  document.getElementById('reqKpi3').textContent=reqData.filter(r=>(r['ESTADO']||'')==='Comprado').length;
+  document.getElementById('reqKpi4').textContent=reqData.filter(r=>(r['ESTADO']||'')==='En tránsito').length;
+  document.getElementById('reqKpi5').textContent=impl;
+}
+
+function populateReqFilters(){
+  const selZona=document.getElementById('reqFilterZona').value;
+  const zonas=[...new Set(reqData.map(r=>(r['ZONA']||'').trim()).filter(Boolean))].sort();
+  document.getElementById('reqFilterZona').innerHTML='<option value="">Todas las zonas</option>'+zonas.map(z=>`<option value="${z}">${z}</option>`).join('');
+  if(selZona) document.getElementById('reqFilterZona').value=selZona;
 }
 
 // ══ DASHBOARD ═════════════════════════════════════════════════════════════
@@ -1312,10 +1507,6 @@ function flash(el,type,msg){
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ══ LOGIN ══════════════════════════════════════════════════════════════════
-// Credenciales:
-//   admin   / SASG2026$   → rol admin  (puede editar Material de Consulta + todo lo demás)
-//   holiday / 2026$       → rol user   (solo lectura + clic en enlace de Material de Consulta)
-
 let loginAttempts = 0;
 let lockUntil = 0;
 let lockTimer = null;
@@ -1343,7 +1534,6 @@ function doLogin() {
   const userInput = (userEl.value || '').trim().toLowerCase();
   const passInput = (passEl.value || '');
 
-  // Buscar usuario en AUTH_USERS
   let matchedRole = null;
   for (const key of Object.keys(AUTH_USERS)) {
     const u = AUTH_USERS[key];
@@ -1354,7 +1544,6 @@ function doLogin() {
   }
 
   if (matchedRole) {
-    // ✅ Login exitoso
     currentRole = matchedRole;
     loginAttempts = 0;
     errorEl.classList.remove('show');
@@ -1363,25 +1552,21 @@ function doLogin() {
     document.getElementById('loginScreen').classList.add('hidden');
     showRoleBadge();
     updateMaterialHeaders();
-    // Re-renderizar tablas para aplicar permisos correctos según rol
     renderTable();
     renderCapTable();
+    renderReqTable();
     return;
   }
 
-  // ── Fallo ──
   loginAttempts++;
-
-  // Determinar cuál campo es incorrecto
-  let userOk = false, passOk = false;
+  let userOk = false;
   for (const key of Object.keys(AUTH_USERS)) {
     if (userInput === AUTH_USERS[key].user) { userOk = true; break; }
   }
 
   userEl.classList.toggle('err', !userOk);
-  passEl.classList.toggle('err', true); // si llegó aquí, la pass es incorrecta
+  passEl.classList.toggle('err', true);
 
-  // Shake
   card.classList.remove('shake');
   void card.offsetWidth;
   card.classList.add('shake');
@@ -1431,6 +1616,8 @@ function togglePass() {
     icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
   }
 }
+
+// ══ DATOS LOCALES DE REQUERIMIENTOS (demo hasta conectar Apps Script) ═════
 </script>
 </body>
 </html>
